@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="nl">
-<!-- versie: 1.3 -->
+<!-- versie: 1.4 -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -479,7 +479,7 @@
   </div>
 </div>
 
-<footer>Weekmenu & Recepten &mdash; v1.3</footer>
+<footer>Weekmenu & Recepten &mdash; v1.4</footer>
 
 <script>
 const DAGEN_LANG = ['Zondag','Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag'];
@@ -491,7 +491,8 @@ let activeReceptIdx = null;
 
 // DATA
 let menu = JSON.parse(localStorage.getItem('gp_menu') || '{}');
-let recepten = JSON.parse(localStorage.getItem('gp_recepten') || 'null') || [
+let receptenOpgeslagen = JSON.parse(localStorage.getItem('gp_recepten') || 'null');
+let recepten = (receptenOpgeslagen && receptenOpgeslagen.length > 0) ? receptenOpgeslagen : [
   { naam: 'Spaghetti Bolognese', type: 'Diner', keuken: 'Italiaans', tijd: 45, moei: 'Makkelijk', link: '', favoriet: true },
   { naam: 'Kippensoep', type: 'Diner', keuken: 'Nederlands', tijd: 60, moei: 'Gemiddeld', link: '', favoriet: false },
   { naam: 'Pad Thai', type: 'Diner', keuken: 'Aziatisch', tijd: 30, moei: 'Gemiddeld', link: '', favoriet: true },
