@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="nl">
-<!-- versie: 1.6 -->
+<!-- versie: 1.7 -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -481,7 +481,7 @@
 
 <div id="lader" style="display:none; text-align:center; padding: 2rem; color: var(--brown-light); font-size: 14px;">Gegevens laden...</div>
 
-<footer>Weekmenu & Recepten &mdash; v1.6</footer>
+<footer>Weekmenu & Recepten &mdash; v1.7</footer>
 
 <script>
 const DAGEN = ['Zo','Ma','Di','Wo','Do','Vr','Za'];
@@ -542,14 +542,11 @@ async function slaOp() {
   opslaan_bezig = false;
 }
 
-function getMaandagVan(offset) {
+function getStartDag(offset) {
   const nu = new Date();
-  const dag = nu.getDay();
-  const diff = dag === 0 ? -6 : 1 - dag;
-  const ma = new Date(nu);
-  ma.setDate(nu.getDate() + diff + offset * 7);
-  ma.setHours(0,0,0,0);
-  return ma;
+  nu.setHours(0,0,0,0);
+  nu.setDate(nu.getDate() + offset * 7);
+  return nu;
 }
 
 function dagKey(date) {
@@ -563,17 +560,20 @@ function changeWeek(dir) {
 }
 
 function renderWeek() {
-  const ma = getMaandagVan(weekOffset);
-  const zo = new Date(ma); zo.setDate(ma.getDate() + 6);
+  const start = getStartDag(weekOffset);
+  const eind = new Date(start); eind.setDate(start.getDate() + 6);
   document.getElementById('weekLabel').textContent =
-    `${ma.getDate()} ${MAANDEN[ma.getMonth()]} – ${zo.getDate()} ${MAANDEN[zo.getMonth()]} ${zo.getFullYear()}`;
+    weekOffset === 0 ? 'Deze week' :
+    weekOffset === 1 ? 'Volgende week' :
+    weekOffset === -1 ? 'Vorige week' :
+    `${start.getDate()} ${MAANDEN[start.getMonth()]} – ${eind.getDate()} ${MAANDEN[eind.getMonth()]}`;
 
   const grid = document.getElementById('weekGrid');
   grid.innerHTML = '';
   const vandaag = dagKey(new Date());
 
   for (let i = 0; i < 7; i++) {
-    const d = new Date(ma); d.setDate(ma.getDate() + i);
+    const d = new Date(start); d.setDate(start.getDate() + i);
     const key = dagKey(d);
     const data = menu[key] || {};
     const isVandaag = key === vandaag;
