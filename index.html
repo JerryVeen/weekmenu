@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="nl">
-<!-- versie: 1.5 -->
+<!-- versie: 1.6 -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -479,29 +479,67 @@
   </div>
 </div>
 
-<footer>Weekmenu & Recepten &mdash; v1.5</footer>
+<div id="lader" style="display:none; text-align:center; padding: 2rem; color: var(--brown-light); font-size: 14px;">Gegevens laden...</div>
+
+<footer>Weekmenu & Recepten &mdash; v1.6</footer>
 
 <script>
 const DAGEN = ['Zo','Ma','Di','Wo','Do','Vr','Za'];
 const DAGEN_LANG = ['Zondag','Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag'];
 const MAANDEN = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
 
-let weekOffset = 0;
-let activeDagKey = null;
-let activeReceptIdx = null;
+const BIN_ID = '69c97203aaba882197a4f0af';
+const API_KEY = '$2a$10$CZVwFav5ndghef77Yys9se33V3.QtDrEUU.LGk4JH8LGU1T6SlK7e';
+const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+const HEADERS = { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY };
 
-// DATA
-let menu = JSON.parse(localStorage.getItem('gp_menu') || '{}');
-let receptenOpgeslagen = JSON.parse(localStorage.getItem('gp_recepten') || 'null');
-let recepten = (receptenOpgeslagen && receptenOpgeslagen.length > 0) ? receptenOpgeslagen : [
+const STANDAARD_RECEPTEN = [
   { naam: 'Spaghetti Bolognese', type: 'Diner', keuken: 'Italiaans', tijd: 45, moei: 'Makkelijk', link: '', favoriet: true },
   { naam: 'Kippensoep', type: 'Diner', keuken: 'Nederlands', tijd: 60, moei: 'Gemiddeld', link: '', favoriet: false },
   { naam: 'Pad Thai', type: 'Diner', keuken: 'Aziatisch', tijd: 30, moei: 'Gemiddeld', link: '', favoriet: true },
 ];
 
-function slaOp() {
-  localStorage.setItem('gp_menu', JSON.stringify(menu));
-  localStorage.setItem('gp_recepten', JSON.stringify(recepten));
+let weekOffset = 0;
+let activeDagKey = null;
+let activeReceptIdx = null;
+let menu = {};
+let recepten = [];
+let opslaan_bezig = false;
+
+function toonLader(aan) {
+  document.getElementById('lader').style.display = aan ? 'block' : 'none';
+}
+
+async function laadData() {
+  toonLader(true);
+  try {
+    const res = await fetch(BIN_URL + '/latest', { headers: { 'X-Master-Key': API_KEY } });
+    const json = await res.json();
+    const data = json.record;
+    menu = data.menu || {};
+    recepten = (data.recepten && data.recepten.length > 0) ? data.recepten : STANDAARD_RECEPTEN;
+  } catch(e) {
+    menu = {};
+    recepten = STANDAARD_RECEPTEN;
+  }
+  toonLader(false);
+  renderWeek();
+  renderRecepten();
+}
+
+async function slaOp() {
+  if (opslaan_bezig) return;
+  opslaan_bezig = true;
+  try {
+    await fetch(BIN_URL, {
+      method: 'PUT',
+      headers: HEADERS,
+      body: JSON.stringify({ menu, recepten })
+    });
+  } catch(e) {
+    console.error('Opslaan mislukt:', e);
+  }
+  opslaan_bezig = false;
 }
 
 function getMaandagVan(offset) {
@@ -554,7 +592,6 @@ function renderWeek() {
     grid.appendChild(card);
   }
 
-  // update datalist
   const dl = document.getElementById('receptSuggesties');
   dl.innerHTML = recepten.map(r => `<option value="${r.naam}">`).join('');
 }
@@ -661,6 +698,7 @@ const pinVakken = [document.getElementById('p1'), document.getElementById('p2'),
 
 if (sessionStorage.getItem('gp_toegang') === 'ja') {
   document.getElementById('pinOverlay').classList.add('verborgen');
+  laadData();
 } else {
   document.getElementById('p1').focus();
 }
@@ -674,6 +712,7 @@ pinVakken.forEach((vak, i) => {
       if (code === PINCODE) {
         sessionStorage.setItem('gp_toegang', 'ja');
         document.getElementById('pinOverlay').classList.add('verborgen');
+        laadData();
       } else {
         document.getElementById('pinFout').textContent = 'Onjuiste pincode, probeer opnieuw';
         pinVakken.forEach(v => v.value = '');
@@ -687,9 +726,6 @@ pinVakken.forEach((vak, i) => {
     if (e.key === 'Backspace' && !vak.value && i > 0) pinVakken[i - 1].focus();
   });
 });
-
-renderWeek();
-renderRecepten();
 </script>
 </body>
 </html>
