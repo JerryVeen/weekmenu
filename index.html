@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>Weekmenu & Recepten</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -300,6 +301,36 @@
   .btn-danger { background: transparent; color: #C0392B; border-color: transparent; margin-right: auto; }
   .btn-danger:hover { background: #FDECEA; }
 
+  /* PINCODE */
+  .pin-overlay {
+    position: fixed; inset: 0;
+    background: var(--cream);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 999; flex-direction: column; gap: 1.5rem;
+    padding: 2rem;
+  }
+  .pin-overlay.verborgen { display: none; }
+  .pin-titel {
+    font-family: 'Fraunces', serif;
+    font-weight: 300; font-size: 1.8rem;
+    color: var(--brown); text-align: center;
+  }
+  .pin-titel em { font-style: italic; color: var(--accent); }
+  .pin-sub { font-size: 14px; color: var(--brown-light); text-align: center; }
+  .pin-invoer { display: flex; gap: 12px; }
+  .pin-vak {
+    width: 52px; height: 64px;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    background: var(--warm-white);
+    font-family: 'Fraunces', serif;
+    font-size: 1.8rem; font-weight: 300;
+    text-align: center; color: var(--brown);
+    outline: none; transition: border-color 0.15s;
+  }
+  .pin-vak:focus { border-color: var(--accent); }
+  .pin-fout { font-size: 13px; color: var(--accent); text-align: center; min-height: 20px; }
+
   /* FOOTER */
   footer {
     text-align: center; padding: 2rem;
@@ -308,6 +339,18 @@
 </style>
 </head>
 <body>
+
+<div class="pin-overlay" id="pinOverlay">
+  <div class="pin-titel">Weekmenu &amp; <em>Recepten</em></div>
+  <div class="pin-sub">Voer de pincode in om verder te gaan</div>
+  <div class="pin-invoer">
+    <input class="pin-vak" id="p1" type="password" maxlength="1" inputmode="numeric" pattern="[0-9]">
+    <input class="pin-vak" id="p2" type="password" maxlength="1" inputmode="numeric" pattern="[0-9]">
+    <input class="pin-vak" id="p3" type="password" maxlength="1" inputmode="numeric" pattern="[0-9]">
+    <input class="pin-vak" id="p4" type="password" maxlength="1" inputmode="numeric" pattern="[0-9]">
+  </div>
+  <div class="pin-fout" id="pinFout"></div>
+</div>
 
 <header>
   <div class="header-inner">
@@ -595,6 +638,39 @@ function sluitModal(id) {
 
 document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// PINCODE
+const PINCODE = '1212';
+const pinVakken = [document.getElementById('p1'), document.getElementById('p2'), document.getElementById('p3'), document.getElementById('p4')];
+
+if (sessionStorage.getItem('gp_toegang') === 'ja') {
+  document.getElementById('pinOverlay').classList.add('verborgen');
+} else {
+  document.getElementById('p1').focus();
+}
+
+pinVakken.forEach((vak, i) => {
+  vak.addEventListener('input', () => {
+    vak.value = vak.value.replace(/[^0-9]/g, '');
+    if (vak.value && i < 3) pinVakken[i + 1].focus();
+    const code = pinVakken.map(v => v.value).join('');
+    if (code.length === 4) {
+      if (code === PINCODE) {
+        sessionStorage.setItem('gp_toegang', 'ja');
+        document.getElementById('pinOverlay').classList.add('verborgen');
+      } else {
+        document.getElementById('pinFout').textContent = 'Onjuiste pincode, probeer opnieuw';
+        pinVakken.forEach(v => v.value = '');
+        pinVakken[0].focus();
+      }
+    } else {
+      document.getElementById('pinFout').textContent = '';
+    }
+  });
+  vak.addEventListener('keydown', e => {
+    if (e.key === 'Backspace' && !vak.value && i > 0) pinVakken[i - 1].focus();
+  });
 });
 
 renderWeek();
