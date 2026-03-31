@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="nl">
-<!-- versie: 1.7 -->
+<!-- versie: 1.9 -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -49,13 +49,14 @@
   .header-inner { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
   header h1 {
     font-family: 'Fraunces', serif;
-    font-weight: 300;
+    font-weight: 400;
     font-size: clamp(2rem, 5vw, 3rem);
-    color: var(--cream);
+    color: #FFFFFF;
     letter-spacing: -0.02em;
     line-height: 1.1;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
   }
-  header h1 em { font-style: italic; color: #E8A87C; }
+  header h1 em { font-style: italic; color: #F4A263; text-shadow: 0 2px 8px rgba(0,0,0,0.4); }
   header p {
     color: rgba(247,243,237,0.6);
     font-size: 0.85rem;
@@ -481,7 +482,7 @@
 
 <div id="lader" style="display:none; text-align:center; padding: 2rem; color: var(--brown-light); font-size: 14px;">Gegevens laden...</div>
 
-<footer>Weekmenu & Recepten &mdash; v1.7</footer>
+<footer>Weekmenu & Recepten &mdash; v1.9</footer>
 
 <script>
 const DAGEN = ['Zo','Ma','Di','Wo','Do','Vr','Za'];
