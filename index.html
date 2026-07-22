@@ -753,7 +753,11 @@ async function logUit() {
   await supabaseClient.auth.signOut();
 }
 
-supabaseClient.auth.onAuthStateChange((_event, session) => toonSessie(session));
+supabaseClient.auth.onAuthStateChange((_event, session) => {
+  // Supabase calls inside this callback can deadlock the auth client.
+  // Defer the membership check until the callback has returned.
+  setTimeout(() => toonSessie(session), 0);
+});
 supabaseClient.auth.getSession().then(({ data }) => toonSessie(data.session));
 </script>
 </body>
