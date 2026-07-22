@@ -313,35 +313,36 @@
   .btn-danger { background: transparent; color: #C0392B; border-color: transparent; margin-right: auto; }
   .btn-danger:hover { background: #FDECEA; }
 
-  /* PINCODE */
-  .pin-overlay {
+  /* INLOGGEN */
+  .auth-overlay {
     position: fixed; inset: 0;
     background: var(--cream);
     display: flex; align-items: center; justify-content: center;
     z-index: 999; flex-direction: column; gap: 1.5rem;
     padding: 2rem;
   }
-  .pin-overlay.verborgen { display: none; }
-  .pin-titel {
+  .auth-overlay.verborgen { display: none; }
+  .auth-card {
+    width: min(100%, 390px); background: var(--warm-white);
+    border: 1px solid var(--border); border-radius: 22px;
+    box-shadow: var(--shadow); padding: 2rem;
+    display: flex; flex-direction: column; gap: 1rem;
+  }
+  .auth-titel {
     font-family: 'Fraunces', serif;
     font-weight: 300; font-size: 1.8rem;
     color: var(--brown); text-align: center;
   }
-  .pin-titel em { font-style: italic; color: var(--accent); }
-  .pin-sub { font-size: 14px; color: var(--brown-light); text-align: center; }
-  .pin-invoer { display: flex; gap: 12px; }
-  .pin-vak {
-    width: 52px; height: 64px;
-    border: 1.5px solid var(--border);
-    border-radius: 14px;
-    background: var(--warm-white);
-    font-family: 'Fraunces', serif;
-    font-size: 1.8rem; font-weight: 300;
-    text-align: center; color: var(--brown);
-    outline: none; transition: border-color 0.15s;
-  }
-  .pin-vak:focus { border-color: var(--accent); }
-  .pin-fout { font-size: 13px; color: var(--accent); text-align: center; min-height: 20px; }
+  .auth-titel em { font-style: italic; color: var(--accent); }
+  .auth-sub { font-size: 14px; color: var(--brown-light); text-align: center; line-height: 1.5; }
+  .auth-email { width: 100%; padding: 11px 13px; border: 1.5px solid var(--border); border-radius: 10px; background: white; font: 14px 'DM Sans', sans-serif; color: var(--brown); outline: none; }
+  .auth-email:focus { border-color: var(--accent); }
+  .auth-btn { width: 100%; }
+  .auth-melding { font-size: 13px; color: var(--brown-light); text-align: center; min-height: 20px; line-height: 1.4; }
+  .auth-melding.fout { color: var(--accent); }
+  .account-bar { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: .75rem; }
+  .account-email { color: rgba(247,243,237,.65); font-size: 12px; }
+  .uitlog-btn { background: transparent; border: 0; color: #F4A263; cursor: pointer; font: 12px 'DM Sans', sans-serif; }
 
   /* FOOTER */
   footer {
@@ -352,21 +353,23 @@
 </head>
 <body>
 
-<div class="pin-overlay" id="pinOverlay">
-  <div class="pin-titel">Weekmenu &amp; <em>Recepten</em></div>
-  <div class="pin-sub">Voer de pincode in om verder te gaan</div>
-  <div class="pin-invoer">
-    <input class="pin-vak" id="p1" type="password" maxlength="1" inputmode="numeric" pattern="[0-9]">
-    <input class="pin-vak" id="p2" type="password" maxlength="1" inputmode="numeric" pattern="[0-9]">
-    <input class="pin-vak" id="p3" type="password" maxlength="1" inputmode="numeric" pattern="[0-9]">
-    <input class="pin-vak" id="p4" type="password" maxlength="1" inputmode="numeric" pattern="[0-9]">
-  </div>
-  <div class="pin-fout" id="pinFout"></div>
+<div class="auth-overlay" id="authOverlay">
+  <form class="auth-card" id="authForm">
+    <div class="auth-titel">Weekmenu &amp; <em>Recepten</em></div>
+    <div class="auth-sub">Log in met een toegestaan e-mailadres. Je ontvangt een veilige inloglink per e-mail.</div>
+    <input class="auth-email" id="authEmail" type="email" autocomplete="email" placeholder="jouw@email.nl" required>
+    <button class="btn btn-primary auth-btn" id="authButton" type="submit">Stuur inloglink</button>
+    <div class="auth-melding" id="authMelding" aria-live="polite"></div>
+  </form>
 </div>
 
 <header>
   <div class="header-inner">
     <h1>Weekmenu &amp; <em>Recepten</em></h1>
+    <div class="account-bar" id="accountBar" hidden>
+      <span class="account-email" id="accountEmail"></span>
+      <button class="uitlog-btn" type="button" onclick="logUit()">Uitloggen</button>
+    </div>
   </div>
 </header>
 
@@ -484,15 +487,18 @@
 
 <footer>Weekmenu & Recepten &mdash; v1.9</footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
 <script>
 const DAGEN = ['Zo','Ma','Di','Wo','Do','Vr','Za'];
 const DAGEN_LANG = ['Zondag','Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag'];
 const MAANDEN = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
 
-const BIN_ID = '69c97203aaba882197a4f0af';
-const API_KEY = '$2a$10$CZVwFav5ndghef77Yys9se33V3.QtDrEUU.LGk4JH8LGU1T6SlK7e';
-const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
-const HEADERS = { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY };
+const supabaseClient = window.supabase.createClient(
+  window.WEEKMENU_CONFIG.supabaseUrl,
+  window.WEEKMENU_CONFIG.supabasePublishableKey
+);
+
 
 const STANDAARD_RECEPTEN = [
   { naam: 'Spaghetti Bolognese', type: 'Diner', keuken: 'Italiaans', tijd: 45, moei: 'Makkelijk', link: '', favoriet: true },
@@ -514,12 +520,17 @@ function toonLader(aan) {
 async function laadData() {
   toonLader(true);
   try {
-    const res = await fetch(BIN_URL + '/latest', { headers: { 'X-Master-Key': API_KEY } });
-    const json = await res.json();
-    const data = json.record;
+    const { data: record, error } = await supabaseClient
+      .from('app_data')
+      .select('payload')
+      .eq('id', 1)
+      .maybeSingle();
+    if (error) throw error;
+    const data = record?.payload || {};
     menu = data.menu || {};
     recepten = (data.recepten && data.recepten.length > 0) ? data.recepten : STANDAARD_RECEPTEN;
   } catch(e) {
+    console.error('Laden mislukt:', e);
     menu = {};
     recepten = STANDAARD_RECEPTEN;
   }
@@ -532,11 +543,10 @@ async function slaOp() {
   if (opslaan_bezig) return;
   opslaan_bezig = true;
   try {
-    await fetch(BIN_URL, {
-      method: 'PUT',
-      headers: HEADERS,
-      body: JSON.stringify({ menu, recepten })
-    });
+    const { error } = await supabaseClient
+      .from('app_data')
+      .upsert({ id: 1, payload: { menu, recepten }, updated_at: new Date().toISOString() });
+    if (error) throw error;
   } catch(e) {
     console.error('Opslaan mislukt:', e);
   }
@@ -693,40 +703,58 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
 });
 
-// PINCODE
-const PINCODE = '1212';
-const pinVakken = [document.getElementById('p1'), document.getElementById('p2'), document.getElementById('p3'), document.getElementById('p4')];
+const authOverlay = document.getElementById('authOverlay');
+const authForm = document.getElementById('authForm');
+const authMelding = document.getElementById('authMelding');
 
-if (sessionStorage.getItem('gp_toegang') === 'ja') {
-  document.getElementById('pinOverlay').classList.add('verborgen');
+async function toonSessie(session) {
+  const ingelogd = Boolean(session?.user);
+  if (!ingelogd) {
+    authOverlay.classList.remove('verborgen');
+    document.getElementById('accountBar').hidden = true;
+    return;
+  }
+  const { data: isMember, error } = await supabaseClient.rpc('is_weekmenu_member');
+  if (error || !isMember) {
+    await supabaseClient.auth.signOut();
+    authMelding.classList.add('fout');
+    authMelding.textContent = 'Dit e-mailadres is niet uitgenodigd voor Weekmenu.';
+    return;
+  }
+  authOverlay.classList.add('verborgen');
+  document.getElementById('accountBar').hidden = false;
+  document.getElementById('accountEmail').textContent = session.user.email;
   laadData();
-} else {
-  document.getElementById('p1').focus();
 }
 
-pinVakken.forEach((vak, i) => {
-  vak.addEventListener('input', () => {
-    vak.value = vak.value.replace(/[^0-9]/g, '');
-    if (vak.value && i < 3) pinVakken[i + 1].focus();
-    const code = pinVakken.map(v => v.value).join('');
-    if (code.length === 4) {
-      if (code === PINCODE) {
-        sessionStorage.setItem('gp_toegang', 'ja');
-        document.getElementById('pinOverlay').classList.add('verborgen');
-        laadData();
-      } else {
-        document.getElementById('pinFout').textContent = 'Onjuiste pincode, probeer opnieuw';
-        pinVakken.forEach(v => v.value = '');
-        pinVakken[0].focus();
-      }
-    } else {
-      document.getElementById('pinFout').textContent = '';
+authForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const email = document.getElementById('authEmail').value.trim();
+  const button = document.getElementById('authButton');
+  button.disabled = true;
+  authMelding.classList.remove('fout');
+  authMelding.textContent = 'Inloglink versturen…';
+  const { error } = await supabaseClient.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: window.location.href.split('#')[0].split('?')[0]
     }
   });
-  vak.addEventListener('keydown', e => {
-    if (e.key === 'Backspace' && !vak.value && i > 0) pinVakken[i - 1].focus();
-  });
+  button.disabled = false;
+  if (error) {
+    authMelding.classList.add('fout');
+    authMelding.textContent = 'De inloglink kon niet worden verstuurd. Controleer het e-mailadres.';
+    return;
+  }
+  authMelding.textContent = 'Controleer je e-mail en open de inloglink op dit apparaat.';
 });
+
+async function logUit() {
+  await supabaseClient.auth.signOut();
+}
+
+supabaseClient.auth.onAuthStateChange((_event, session) => toonSessie(session));
+supabaseClient.auth.getSession().then(({ data }) => toonSessie(data.session));
 </script>
 </body>
 </html>
